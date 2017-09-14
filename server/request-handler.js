@@ -20,6 +20,9 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
+
+
+
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -45,10 +48,20 @@ exports.requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-
+  
   // The outgoing status.
-  var statusCode = 200;
-
+  //Default status of 404
+  var statusCode = 404;
+  //Return status 200 for GET
+  if (request.url.includes('classes/messages')) {
+    if (request.method === 'GET') {
+      statusCode = 200;
+    //Return status 201 for POST requests
+    } else if (request.method === 'POST') {
+      statusCode = 201;
+    }
+  }
+  
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
 
@@ -69,7 +82,12 @@ exports.requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end(JSON.stringify({results: []}));
+  response.end(JSON.stringify({results: [
+    {
+      username: 'Jono',
+      message: 'Do my bidding!'
+    }
+  ]}));
   
 };
 
