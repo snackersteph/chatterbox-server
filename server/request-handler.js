@@ -60,38 +60,60 @@ exports.requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-  console.log(request.url);
-  // The outgoing status.
+
   //Default status of 404
   var headers = defaultCorsHeaders;
   var statusCode = 404;
   
-  //Return status 200 for GET
+  //Check if url has correct path
   if (request.url === '/classes/messages') {
+
+    //Check if method is GET or OPTIONS preflight
     if (request.method === 'GET' || request.method === 'OPTIONS') {
+
       statusCode = 200;
       response.writeHead(statusCode, headers);
-      //end response and send back results array
-      console.log(JSON.stringify(messageObj));
       response.end(JSON.stringify(messageObj));
-    //Return status 201 for POST requests
+
+    //Check if method is POST
     } else if (request.method === 'POST') {
       statusCode = 201;
       response.writeHead(statusCode, headers);
       id += '0';
-      // console.log('POSTING LOLLLLS');
-      //construct message
-      console.log(request.username);
-      var message = {};
-      message.username = request.username;
-      message.text = request.text;
-      message.roomname = request.roomname;
-      message.objectId = id;
-      results.push(message);
+      // console.log('REQUEST', request.on);
+
+      //Receive message body
+      let body = '';
+      request.on('data', (chunk) => {
+        body += chunk;
+      }).on('end', () => {
+        body = body.split('&');
+        console.log(body);
+        
+        // //Construct message
+        
+        //Parsing the request
+        var splitUsername = body[0].split('=')[1];
+        var splitText = body[1].split('=')[1];
+        var splitRoomname = body[2].split('=')[1];
+        
+        //Creating message object
+        var message = {};
+        message.username = splitUsername;
+        message.text = splitText;
+        message.roomname = splitRoomname;
+        message.objectId = id;
+        results.push(message);
+        response.end(JSON.stringify(messageObj));
+
+
+        
+        // at this point, `body` has the entire request body stored in it as a string
+      });
       
-      // console.log(JSON.stringify(message));
-      //end response
-      response.end(JSON.stringify(messageObj));
+      
+
+    //If none of the above, return 404 Not Found
     } else {
       response.writeHead(statusCode, headers);
       response.end();
