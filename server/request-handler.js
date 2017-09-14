@@ -20,7 +20,19 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
+var id = '0';
 
+var results = [
+  {
+    username: 'Jono',
+    text: 'Do my bidding!',
+    roomname: 'lobby',
+    objectId: '0'
+  }
+];
+
+var messageObj = {};
+messageObj.results = results;
 
 
 var defaultCorsHeaders = {
@@ -48,22 +60,45 @@ exports.requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-  
+  console.log(request.url);
   // The outgoing status.
   //Default status of 404
+  var headers = defaultCorsHeaders;
   var statusCode = 404;
+  
   //Return status 200 for GET
-  if (request.url.includes('classes/messages')) {
-    if (request.method === 'GET') {
+  if (request.url === '/classes/messages') {
+    if (request.method === 'GET' || request.method === 'OPTIONS') {
       statusCode = 200;
+      response.writeHead(statusCode, headers);
+      //end response and send back results array
+      console.log(JSON.stringify(messageObj));
+      response.end(JSON.stringify(messageObj));
     //Return status 201 for POST requests
     } else if (request.method === 'POST') {
       statusCode = 201;
+      response.writeHead(statusCode, headers);
+      id += '0';
+      // console.log('POSTING LOLLLLS');
+      //construct message
+      console.log(request.username);
+      var message = {};
+      message.username = request.username;
+      message.text = request.text;
+      message.roomname = request.roomname;
+      message.objectId = id;
+      results.push(message);
+      
+      // console.log(JSON.stringify(message));
+      //end response
+      response.end(JSON.stringify(messageObj));
+    } else {
+      response.writeHead(statusCode, headers);
+      response.end();
     }
   }
   
   // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
 
   // Tell the client we are sending them plain text.
   //
@@ -73,7 +108,6 @@ exports.requestHandler = function(request, response) {
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -82,12 +116,7 @@ exports.requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end(JSON.stringify({results: [
-    {
-      username: 'Jono',
-      message: 'Do my bidding!'
-    }
-  ]}));
+  
   
 };
 
