@@ -37,16 +37,17 @@ var app = {
 
   send: function(message) {
     // app.startSpinner();
-
+    console.log(JSON.stringify(message));
     // POST the message to the server
     $.ajax({
       url: app.server,
       type: 'POST',
-      data: message,
+      contentType: 'application/json',
+      data: JSON.stringify(message),
       success: function (data) {
         // Clear messages input
         app.$message.val('');
-
+      
         // Trigger a fetch to update the messages, pass true to animate
         app.fetch();
       },
@@ -162,6 +163,7 @@ var app = {
     }
 
     var $message = $('<br><span/>');
+    console.log(message.text);
     $message.text(message.text).appendTo($chat);
 
     // Add the message to the UI

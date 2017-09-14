@@ -20,6 +20,8 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
+
+
 var id = '0';
 
 var results = [
@@ -80,39 +82,34 @@ exports.requestHandler = function(request, response) {
       statusCode = 201;
       response.writeHead(statusCode, headers);
       id += '0';
-      // console.log('REQUEST', request.on);
 
       //Receive message body
       let body = '';
       request.on('data', (chunk) => {
         body += chunk;
       }).on('end', () => {
-        body = body.split('&');
+        body = JSON.parse(body);
         console.log(body);
+        // body = body.split('&');
+
+        //*Construct message*
         
-        // //Construct message
-        
-        //Parsing the request
-        var splitUsername = body[0].split('=')[1];
-        var splitText = body[1].split('=')[1];
-        var splitRoomname = body[2].split('=')[1];
+        // //Parsing the request
+        // var splitUsername = body[0].split('=')[1];
+        // var splitText = body[1].split('=')[1];
+        // var splitRoomname = body[2].split('=')[1];
         
         //Creating message object
         var message = {};
-        message.username = splitUsername;
-        message.text = splitText;
-        message.roomname = splitRoomname;
+        message.username = body.username;
+        message.text = body.text;
+        message.roomname = body.roomname;
         message.objectId = id;
         results.push(message);
         response.end(JSON.stringify(messageObj));
 
-
-        
-        // at this point, `body` has the entire request body stored in it as a string
       });
       
-      
-
     //If none of the above, return 404 Not Found
     } else {
       response.writeHead(statusCode, headers);
