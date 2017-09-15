@@ -22,22 +22,19 @@ this file and include it in basic-server.js so that it actually works.
 // client from this domain by setting up static file serving.
 
 
-var id = '0';
+var objectId = 0;
 
-var results = [
+var messages = [
   {
     username: 'Jono',
     text: 'Do my bidding!',
     roomname: 'lobby',
-    objectId: '0'
+    objectId: objectId
   }
 ];
 
-var messageObj = {};
-messageObj.results = results;
 
-
-var defaultCorsHeaders = {
+var headers = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, accept',
@@ -45,97 +42,47 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-exports.requestHandler = function(request, response) {
+var sendResponse = (response, data, statusCode) => {
+  statusCode = statusCode || 200;
+  response.writeHead(statusCode, headers);
+  response.end(JSON.stringify(data));
+};
 
-  // Request and Response come from node's http module.
-  //
-  // They include information about both the incoming request, such as
-  // headers and URL, and about the outgoing response, such as its status
-  // and content.
-  //
-  // Documentation for both request and response can be found in the HTTP section at
-  // http://nodejs.org/documentation/api/
+var collectData = (request, callback) => {
+  var data = '';
+  request.on('data', chunk => data += chunk);
+  request.on('end', () => callback(JSON.parse(data)));
+};
 
-  // Do some basic logging.
-  //
-  // Adding more logging to your server can be an easy way to get passive
-  // debugging help, but you should always be careful about leaving stray
-  // console.logs in your code.
+var actions = {
+  'GET': (request, response) => {
+    sendResponse(response, {results: messages});
+  },
+  'POST': (request, response) => {
+    collectData(request, message => {
+      messages.push(message);
+      message.objectId += 1;
+      sendResponse(response, null);
+    });
+  },
+  'OPTIONS': (request, response) => {
+    sendResponse(response, null);
+  }
+};
+
+module.exports = function(request, response) {
+
+  var action = actions[request.method];
+  if (action) {
+    action(request, response);
+  } else {
+    sendResponse(response, 'Not Found', 404);
+  }
+
+
+
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  //Default status of 404
-  var headers = defaultCorsHeaders;
-  var statusCode = 404;
-  
-  //Check if url has correct path
-  if (request.url === '/classes/messages') {
-
-    //Check if method is GET or OPTIONS preflight
-    if (request.method === 'GET' || request.method === 'OPTIONS') {
-
-      statusCode = 200;
-      response.writeHead(statusCode, headers);
-      response.end(JSON.stringify(messageObj));
-
-    //Check if method is POST
-    } else if (request.method === 'POST') {
-      statusCode = 201;
-      response.writeHead(statusCode, headers);
-      id += '0';
-
-      //Receive message body
-      let body = '';
-      request.on('data', (chunk) => {
-        body += chunk;
-      }).on('end', () => {
-        body = JSON.parse(body);
-        console.log(body);
-        // body = body.split('&');
-
-        //*Construct message*
-        
-        // //Parsing the request
-        // var splitUsername = body[0].split('=')[1];
-        // var splitText = body[1].split('=')[1];
-        // var splitRoomname = body[2].split('=')[1];
-        
-        //Creating message object
-        var message = {};
-        message.username = body.username;
-        message.text = body.text;
-        message.roomname = body.roomname;
-        message.objectId = id;
-        results.push(message);
-        response.end(JSON.stringify(messageObj));
-
-      });
-      
-    //If none of the above, return 404 Not Found
-    } else {
-      response.writeHead(statusCode, headers);
-      response.end();
-    }
-  }
-  
-  // See the note below about CORS headers.
-
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  // headers['Content-Type'] = 'text/plain';
-
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
-
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  
   
 };
 
