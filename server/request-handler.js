@@ -11,16 +11,6 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
-// These headers will allow Cross-Origin Resource Sharing (CORS).
-// This code allows this server to talk to websites that
-// are on different domains, for instance, your chat client.
-//
-// Your chat client is running from a url like file://your/chat/client/index.html,
-// which is considered a different domain.
-//
-// Another way to get around this restriction is to serve you chat
-// client from this domain by setting up static file serving.
-
 
 var objectId = 0;
 
@@ -43,7 +33,6 @@ var headers = {
 };
 
 var sendResponse = (response, data, statusCode) => {
-  statusCode = statusCode || 200;
   response.writeHead(statusCode, headers);
   response.end(JSON.stringify(data));
 };
@@ -56,17 +45,17 @@ var collectData = (request, callback) => {
 
 var actions = {
   'GET': (request, response) => {
-    sendResponse(response, {results: messages});
+    sendResponse(response, {results: messages}, 200);
   },
   'POST': (request, response) => {
     collectData(request, message => {
       messages.push(message);
-      message.objectId += 1;
-      sendResponse(response, null);
+      message.objectId = ++objectId;
+      sendResponse(response, {objectId: message.objectId}, 201);
     });
   },
   'OPTIONS': (request, response) => {
-    sendResponse(response, null);
+    sendResponse(response, null, 200);
   }
 };
 
